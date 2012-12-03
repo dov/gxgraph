@@ -36,9 +36,6 @@ static gint cb_about_dialog (GtkObject * widget, gpointer user_data);
 
 static void create_buttons (window_t * window, GtkWidget * button_box);
 static GtkWidget *create_drawing_area (window_t * window, GtkWidget * daddy);
-static void gc_set_attribs (GdkGC * gc,
-			    GdkColor * color,
-			    double line_width, gint line_style);
 static void
 gtk_painter_set_attributes (painter_t * painter,
 			    GdkColor color,
@@ -71,13 +68,13 @@ typedef struct
   GtkWidget *drawing_area;
   GtkWidget *vbox;
   GtkWidget *button_box;
-  GdkGC *gc;
   PangoLayout *pango_layout;
   PangoContext *pango_context;
   PangoFontDescription *pango_font_description;
   moving_ants_t *moving_ants;
   GdkPixmap *pixmap;
   GtkWidget *gxgraph_hardcopy;
+  cairo_t *cr;
 
   // stateful variables
   gboolean is_defining_zoom_area;
@@ -86,6 +83,7 @@ typedef struct
   gint current_mark_type;
   gdouble current_mark_size_x;
   gdouble current_mark_size_y;
+  int current_line_style;
 } gtk_painter_t;
 
 #define PADDING         2
@@ -107,7 +105,7 @@ gtk_painter_new (window_t * window)
   this->w_toplevel = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_icon (GTK_WINDOW (this->w_toplevel),
                        icon);
-  gdk_pixbuf_unref(icon);
+  g_object_unref(icon);
   gtk_widget_set_size_request (this->w_toplevel,
 			       window->width, window->height);
 
@@ -300,13 +298,14 @@ cb_configure_event (GtkWidget * widget,
   if (gtk_painter->pixmap)
     gdk_pixmap_unref (gtk_painter->pixmap);
   gtk_painter->pixmap = gdk_pixmap_new (widget->window, width, height, -1);
-  gdk_draw_rectangle (gtk_painter->pixmap,
-		      widget->style->bg_gc[GTK_WIDGET_STATE (widget)],
-		      TRUE,
-		      0, 0,
-		      widget->allocation.width, widget->allocation.height);
 
-  gtk_painter->gc = gdk_gc_new (gtk_painter->pixmap);
+  
+  gtk_painter->cr = gdk_cairo_create(GDK_DRAWABLE(gtk_painter->pixmap));
+  gdk_cairo_set_source_color(gtk_painter->cr,&widget->style->bg[GTK_STATE_NORMAL]);
+  cairo_rectangle(gtk_painter->cr,
+                  0,0,
+                  widget->allocation.width, widget->allocation.height);
+  cairo_fill(gtk_painter->cr);
 
   gxgraph_draw_window (window, NULL);
 
@@ -526,18 +525,6 @@ cb_about_dialog (GtkObject * widget, gpointer user_data)
 }
 
 static void
-gc_set_attribs (GdkGC * gc,
-		GdkColor * color, double line_width, gint line_style)
-{
-
-  /* I don't know if this is the proper way of doing it... */
-  gdk_colormap_alloc_color (gdk_colormap_get_system (), color, FALSE, TRUE);
-  gdk_gc_set_foreground (gc, color);
-  gdk_gc_set_line_attributes (gc, line_width, line_style, GDK_CAP_ROUND,
-			      GDK_JOIN_ROUND);
-}
-
-static void
 gtk_painter_set_attributes_style (painter_t * painter, int style)
 {
   char *color_name;
@@ -574,7 +561,10 @@ gtk_painter_set_attributes (painter_t * painter,
 			    gdouble mark_size_x, gdouble mark_size_y)
 {
   gtk_painter_t *gtk_painter = (gtk_painter_t *) painter;
-  gc_set_attribs (gtk_painter->gc, &color, line_width, line_style);
+  cairo_set_line_width(gtk_painter->cr, line_width);
+  cairo_set_line_cap(gtk_painter->cr, CAIRO_LINE_CAP_ROUND);
+  gdk_cairo_set_source_color(gtk_painter->cr, &color);
+  gtk_painter->current_line_style = line_style;
 
   gtk_painter->current_mark_type = mark_type;
   gtk_painter->current_mark_size_x = mark_size_x;
@@ -587,7 +577,9 @@ gtk_painter_draw_line (painter_t * painter,
 {
   gtk_painter_t *gtk_painter = (gtk_painter_t *) painter;
 
-  gdk_draw_line (gtk_painter->pixmap, gtk_painter->gc, x1, y1, x2, y2);
+  cairo_move_to(gtk_painter->cr, x1,y1);
+  cairo_line_to(gtk_painter->cr, x2,y2);
+  cairo_stroke(gtk_painter->cr);
 }
 
 static void
@@ -595,54 +587,51 @@ gtk_painter_draw_segments (painter_t * painter, GArray * segments)
 {
   gtk_painter_t *gtk_painter = (gtk_painter_t *) painter;
   seg_t *segs = (seg_t *) segments->data;
-  GdkSegment *gdk_segs = g_new (GdkSegment, segments->len);
   int seg_idx;
 
   // Translate segments to gtk segments just by rounding
   for (seg_idx = 0; seg_idx < segments->len; seg_idx++)
     {
-      gdk_segs[seg_idx].x1 = (int) (segs[seg_idx].x1 + 0.5);
-      gdk_segs[seg_idx].y1 = (int) (segs[seg_idx].y1 + 0.5);
-      gdk_segs[seg_idx].x2 = (int) (segs[seg_idx].x2 + 0.5);
-      gdk_segs[seg_idx].y2 = (int) (segs[seg_idx].y2 + 0.5);
+      cairo_move_to(gtk_painter->cr, segs[seg_idx].x1,segs[seg_idx].y1);
+      cairo_line_to(gtk_painter->cr, segs[seg_idx].x2,segs[seg_idx].y2);
     }
-  gdk_draw_segments (gtk_painter->pixmap,
-		     gtk_painter->gc, gdk_segs, segments->len);
-  g_free (gdk_segs);
+  cairo_stroke(gtk_painter->cr);
 }
 
 static void
 draw_one_mark (GdkWindow * drawable,
-	       GdkGC * gc,
-	       int x, int y, int mark_type, double size_x, double size_y)
+               cairo_t *cr,
+	       int x, int y,
+               int mark_type,
+               double size_x,
+               double size_y,
+               gboolean *need_stroke,
+               gboolean *need_fill)
 {
-  int xs2 = (int) (size_x / 2);
-  int ys2 = (int) (size_y / 2);
-
-  // Round it so that x,y is always in the center of the mark. Should
-  // be done once for the whole series...
-  gint x1 = x - xs2;
-  gint w = xs2 * 2 + 1;
-  gint y1 = y - ys2;
-  gint h = ys2 * 2 + 1;
-
-  if (mark_type == MARK_TYPE_CIRCLE || mark_type == MARK_TYPE_FCIRCLE)
-    {
-      gboolean do_fill = mark_type == MARK_TYPE_FCIRCLE;
-
-      gdk_draw_arc (drawable, gc, do_fill, x1, y1, w, h, 0, 360 * 64);
-    }
-  else if (mark_type == MARK_TYPE_SQUARE || mark_type == MARK_TYPE_FSQUARE)
-    {
-      gboolean do_fill = mark_type == MARK_TYPE_FSQUARE;
-      gdk_draw_rectangle (drawable, gc, do_fill, x1, y1, w, h);
-    }
-  else if (mark_type == MARK_TYPE_PIXEL)
-    {
-      gdk_draw_point (drawable, gc, x, y);
-    }
-  else
-    g_message ("Unknown mark type!");
+  double rx=size_x/2, ry=size_y/2; // Mark size
+  if (mark_type == MARK_TYPE_CIRCLE) {
+    cairo_move_to(cr, x+rx,y);
+    cairo_arc(cr,
+              x, y,
+              rx, 0.0, 2*G_PI);
+    *need_stroke = 1;
+  }
+  else if (mark_type == MARK_TYPE_FCIRCLE) {
+    cairo_move_to(cr, x+rx,y);
+    cairo_arc(cr,
+              x, y,
+              rx, 0.0, 2*G_PI);
+    *need_fill = 1;
+  }
+  else if (mark_type == MARK_TYPE_SQUARE) {
+    cairo_move_to(cr, x-rx,y-ry);
+    cairo_rectangle(cr, x-rx,y-ry,2*rx,2*ry);
+    *need_stroke = 1;
+  }
+  else if (mark_type == MARK_TYPE_FSQUARE) {
+    cairo_rectangle(cr, x-rx,y-ry,2*rx,2*ry);
+    *need_fill = 1;
+  }
 }
 
 static void
@@ -651,15 +640,23 @@ gtk_painter_draw_marks (painter_t * painter, GArray * marks_array)
   gtk_painter_t *gtk_painter = (gtk_painter_t *) painter;
   mark_t *marks = (mark_t *) marks_array->data;
   int m_idx;
+  gboolean need_stroke = FALSE;
+  gboolean need_fill = FALSE;
 
   for (m_idx = 0; m_idx < marks_array->len; m_idx++)
     draw_one_mark (gtk_painter->pixmap,
-		   gtk_painter->gc,
+		   gtk_painter->cr,
 		   marks[m_idx].x,
 		   marks[m_idx].y,
 		   gtk_painter->current_mark_type,
 		   gtk_painter->current_mark_size_x,
-		   gtk_painter->current_mark_size_y);
+		   gtk_painter->current_mark_size_y,
+                   &need_stroke,
+                   &need_fill);
+  if (need_stroke)
+    cairo_stroke(gtk_painter->cr);
+  if (need_fill)
+    cairo_fill(gtk_painter->cr);
 }
 
 static void
@@ -689,7 +686,7 @@ gtk_painter_draw_text (struct painter_t_struct *painter,
   layout_width = log_rect.width;
   layout_height = log_rect.height;
 
-  gc_set_attribs (gtk_painter->gc, &gc_black, 0, 0);
+  gdk_cairo_set_source_color(gtk_painter->cr, &gc_black);
 
   if (just == T_RIGHT)
     {
@@ -709,10 +706,8 @@ gtk_painter_draw_text (struct painter_t_struct *painter,
     x_pos -= layout_width / 2;
 
 
-  gdk_draw_layout (gtk_painter->pixmap,
-		   gtk_painter->gc,
-		   floor (x_pos), floor (y_pos), gtk_painter->pango_layout);
-
+  cairo_move_to(gtk_painter->cr,x_pos,y_pos);
+  pango_cairo_show_layout(gtk_painter->cr,gtk_painter->pango_layout);
 }
 
 void
