@@ -1,0 +1,116 @@
+Name "@NAME@"
+OutFile "Install@NAME_CAP@-@VERSION@.exe"
+
+SetCompress force ; (can be off or force)
+CRCCheck on ; (can be off)
+
+LicenseText "Please read and accept the following license:"
+LicenseData "COPYING"
+
+InstallDir "$PROGRAMFILES\@NAME_CAP@"
+InstallDirRegKey HKEY_LOCAL_MACHINE "SOFTWARE\@NAME_CAP@" ""
+Icon @NAME@.ico
+UninstallIcon @NAME@.ico
+XPStyle on
+
+; DirShow show ; (make this hide to not let the user change it)
+; DirText "Select the directory to install @NAME_CAP@ in:"
+
+; optional section
+Section "Start Menu Shortcuts"
+  CreateDirectory "$SMPROGRAMS\@NAME_CAP@"
+  CreateShortCut "$SMPROGRAMS\@NAME_CAP@\Uninstall.lnk" "$INSTDIR\bin\uninst.exe" "" "$INSTDIR\uninst.exe" 0
+  CreateShortCut "$SMPROGRAMS\@NAME_CAP@\@NAME_CAP@.lnk" "$INSTDIR\bin\@NAME_CAP@.exe" "" "$INSTDIR\@NAME_CAP@.exe" 0
+SectionEnd
+
+Section "" ; (default section)
+SetOutPath $INSTDIR
+
+File /oname=COPYING.txt COPYING
+File /oname=README.txt README.md
+
+SetOutPath $INSTDIR\bin
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libintl-8.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\iconv.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpcre-1.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libexpat-1.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgdk-win32-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgdk_pixbuf-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgtk-win32-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpixman-1-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libffi-6.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgio-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libcairo-2.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\zlib1.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libglib-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libatk-1.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgobject-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgmodule-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgthread-2.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpango-1.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpangocairo-1.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpangoft2-1.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpangowin32-1.0-0.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libpng15-15.dll
+#File \usr\i686-w64-mingw32\sys-root\mingw\bin\libcroco-0.6-3.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libfontconfig-1.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libxml2-2.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libfreetype-6.dll
+#File \usr\i686-w64-mingw32\sys-root\mingw\bin\freetype6.dll
+#File \usr\i686-w64-mingw32\sys-root\mingw\bin\bzip2.dll
+#File \usr\i686-w64-mingw32\sys-root\mingw\bin\xmltok.dll
+#File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgsf-1-114.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libgcc_s_sjlj-1.dll
+File \usr\i686-w64-mingw32\sys-root\mingw\bin\libstdc++-6.dll
+File @NAME@.exe
+
+SetOutPath "$INSTDIR"
+File /r \usr\i686-w64-mingw32\sys-root\mingw\etc
+SetOutPath $INSTDIR\lib\gdk-pixbuf-2.0\2.10.0\loaders
+File \usr\i686-w64-mingw32\sys-root\mingw\lib\gdk-pixbuf-2.0\2.10.0\loaders\*
+SetOutPath $INSTDIR\lib\gdk-pixbuf-2.0\2.10.0
+File \usr\i686-w64-mingw32\sys-root\mingw\lib\gdk-pixbuf-2.0\2.10.0\loaders.cache
+SetOutPath $INSTDIR\lib\gtk-2.0\2.10.0\engines
+File \usr\i686-w64-mingw32\sys-root\mingw\lib\gtk-2.0\2.10.0\engines\*
+SetOutPath $INSTDIR\share\themes 
+File /r \usr\i686-w64-mingw32\sys-root\mingw\share\themes\*
+
+SetOutPath "$INSTDIR\lib"
+File /r \usr\i686-w64-mingw32\sys-root\mingw\lib\pango
+
+SetOutPath "$INSTDIR\examples"
+FILE /r examples\*
+
+; Set up association with .gxg files
+DeleteRegKey HKCR ".gxg"
+DeleteRegKey HKCU "Software\Microsoft\Windows\CurrentVersion\Explorer\FileExts\.gxg"
+WriteRegStr HKCR ".gxg" "" "GxgFile"
+DeleteRegKey HKCR "GxgFile"
+DeleteRegKey HKCR "Gxg.Document"
+WriteRegStr HKCR "GxgFile" "" "gxgraph File"
+WriteRegStr HKCR "GxgFile\DefaultIcon" "" "$INSTDIR\bin\gxgraph.exe,0"
+WriteRegStr HKCR "GxgFile\shell" "" "open"
+WriteRegStr HKCR "GxgFile\shell\open\command" "" '$INSTDIR\bin\gxgraph.exe "%1"'
+
+System::Call 'Shell32::SHChangeNotify(i 0x8000000, i 0, i 0, i 0)'
+
+
+WriteRegStr HKEY_LOCAL_MACHINE "SOFTWARE\@NAME_CAP@" "" "$INSTDIR"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\@NAME_CAP@" "DisplayName" "@NAME_CAP@ (remove only)"
+WriteRegStr HKEY_LOCAL_MACHINE "Software\Microsoft\Windows\CurrentVersion\Uninstall\@NAME_CAP@" "UninstallString" '"$INSTDIR\bin\uninst.exe"'
+; write out uninstaller
+WriteUninstaller "$INSTDIR\bin\uninst.exe"
+SectionEnd ; end of default section
+
+; begin uninstall settings/section
+UninstallText "This will uninstall @NAME_CAP@ from your system"
+
+Section Uninstall
+; add delete commands to delete whatever files/registry keys/etc you installed here.
+DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\@NAME_CAP@"
+DeleteRegKey HKEY_LOCAL_MACHINE "SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\@NAME_CAP@"
+RMDir /r "$INSTDIR"
+RMDir /r "$SMPROGRAMS\@NAME_CAP@"
+SectionEnd ; end of uninstall section
+
+; eof

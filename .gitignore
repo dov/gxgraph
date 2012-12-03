@@ -1,4 +1,10 @@
 *.o
-/.sconsign.dblite
-/src/.sconsign.dblite
-/src/gxgraph
+*.obj
+.sconsign.dblite
+gxgraph
+gxgraph.exe
+InstallGxGraph-0.1.6.exe
+/gxgraph.nsi
+/gxgraph.rc
+/COPYING.dos
+/version.h
