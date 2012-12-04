@@ -21,6 +21,10 @@ Here is an example of a gxgraph file:
   $mark_size 10
   0 1
   
+# Development
+
+For sources and bug tracking see: https://github.com/dov/gxgraph
+
 # References:
 
 * http://www.mrtc.mdh.se/~icc/SDE/5.0-0/doc/RefMan/xgraph.html

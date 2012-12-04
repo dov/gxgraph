@@ -1,0 +1,10 @@
+This program is compiled with scons.
+
+On Linux and unix like systems do:
+
+   scons 
+   scons install
+
+To create a binary installer for windows do:
+
+   scons mingw=1

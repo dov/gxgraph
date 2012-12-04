@@ -1,3 +1,4 @@
+import glob
 import os
 import re
 
@@ -122,10 +123,6 @@ elif ARGUMENTS.get('mingw',0):
 env.Append(LINKFLAGS=linkflags,
            CPPFLAGS=cppflags)
 
-SConscript(['src/SConscript',
-            ],
-           exports='env')
-
 bin = env.Program('${NAME}',
                   src,
                   env['LIBS'])
@@ -134,4 +131,16 @@ env.Alias("install",
           [env.Install('/usr/local/bin',
                        bin),
            ])
+
+env.Alias("dist",
+          env.Command("dist",
+                      glob.glob("*.c")
+                      +glob.glob("*.h")
+                      +glob.glob("*.i")
+                      + ["COPYING",
+                         "README.md",
+                         "INSTALL",
+                         "SConstruct",
+                         "examples"],
+                      ["tar -zcf ${NAME}-${VERSION}.tar.gz $SOURCES"]))
 
