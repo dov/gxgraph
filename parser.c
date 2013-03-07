@@ -14,7 +14,7 @@
 #include "gxgraph.h"
 #include "parser.h"
 
-#define NCASE(s) if (!g_strcasecmp(s, S_))
+#define NCASE(s) if (!g_ascii_strcasecmp(s, S_))
 
 
 /*======================================================================
@@ -161,6 +161,26 @@ string_to_atof (const char *string, int idx)
   g_free (word);
 
   return value;
+}
+
+void
+string_shorten_whitespace(char *string)
+{
+  int len = strlen(string);
+  char *p = string + len-1;
+  while(p != string)
+    {
+      gchar ch = *p;
+      if (ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t')
+        {
+          *p = 0;
+          p-=1;
+          len-= 1;
+          continue;
+        }
+      break;
+    }
+      
 }
 
 /*======================================================================

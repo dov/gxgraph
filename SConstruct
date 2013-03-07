@@ -91,7 +91,8 @@ else:
         pkgconfig = "env PKG_CONFIG_PATH=/usr/local/gtk/lib/pkgconfig:/usr/local/lib/pkgconfig:/usr/lib/pkgconfig /usr/local/gtk/bin/pkg-config"
 
     env.Append(PKGCONFIG = pkgconfig,
-               CPPPATH = ["/usr/local/include"]
+               CPPPATH = ["/usr/local/include"],
+               LIBS = ['m']
                )
 
 env.ParseConfig('${PKGCONFIG} --cflags --libs gtk+-2.0')

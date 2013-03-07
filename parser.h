@@ -50,5 +50,6 @@ int    split_string_to_double_pair(const char *string,
 				   /* output */
 				   double *low,
 				   double *hi);
+void string_shorten_whitespace(char *string);
 
 #endif /* PARSER */

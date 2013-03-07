@@ -86,7 +86,7 @@ typedef struct
   int current_line_style;
 } gtk_painter_t;
 
-#define PADDING         2
+#define PADDING         10
 #define SPACE           10
 #define TICKLENGTH      5
 

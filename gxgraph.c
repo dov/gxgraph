@@ -63,8 +63,8 @@ dataset_t *first_dataset = NULL;
 
 /* Global parameter values */
 gboolean  prm_do_draw_ticks = FALSE;
-gchar    *prm_x_unit_text = "X";
-gchar    *prm_y_unit_text = "Y";
+gchar    *prm_x_unit_text = NULL;
+gchar    *prm_y_unit_text = NULL;
 gboolean  prm_do_draw_bounding_box = FALSE;
 
 /* low > hi, means set based on data, like in xgraph */
@@ -82,8 +82,8 @@ gdouble default_line_width = 0;
 gdouble default_mark_size = 7;
 int num_datasets = 0;
 gchar *prm_title_text = NULL;
-gchar *prm_xfmt = "%.2f";
-gchar *prm_yfmt = "%.2f";
+gchar *prm_xfmt = NULL;
+gchar *prm_yfmt = NULL;
 gboolean prm_do_logx = FALSE;
 gboolean prm_do_logy = FALSE;
 GArray *prm_override_names = NULL;
@@ -260,6 +260,10 @@ main (int argc, char *argv[])
 static void gxgraph_init()
 {
   prm_title_text = g_strdup("gxgraph");
+  prm_x_unit_text = g_strdup("X");
+  prm_y_unit_text = g_strdup("Y");
+  prm_xfmt = g_strdup("%.2f");
+  prm_yfmt = g_strdup("%.2f");
 }
 
 static dataset_t *
@@ -526,9 +530,25 @@ read_data_sets (int argc, char *argv[])
 		dataset_p->set_name = string_strdup_rest(S_, 1);
 	      break;
 	    case STRING_SET_TITLE:
-	      if (prm_title_text)
-		g_free(prm_title_text);
-	      prm_title_text = string_strdup_rest(S_, 1);
+              {
+                if (prm_title_text)
+                  g_free(prm_title_text);
+              
+                gchar *rest = string_strdup_rest(S_, 1);
+                string_shorten_whitespace(rest);
+                prm_title_text = g_malloc(strlen(rest));
+                gchar *p = prm_title_text;
+                int i;
+                // Erase quotes for start and end.
+                for (i=0; i<strlen(rest); i++)
+                  {
+                    if ((i==0 || i == strlen(rest)-1) && rest[i]=='"')
+                      continue;
+                    *p++ = rest[i];
+                  }
+                *p = 0;
+                g_free(rest);
+              }
 	      break;
 	    case STRING_SET_LARGE_PIXELS:
 	      default_draw_marks = TRUE;
