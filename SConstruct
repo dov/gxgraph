@@ -15,7 +15,7 @@ env = Environment(LINKFLAGS = linkflags,
 
 env['NAME'] = 'gxgraph'
 env['NAME_CAP'] = 'GxGraph'
-env['VERSION'] = "0.1.6"
+env['VERSION'] = "0.1.7"
 
 def is_centos():
     return re.search('CentOS', open("/etc/redhat-release").read())

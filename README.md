@@ -10,16 +10,20 @@ The syntax of datasets in gxgraph is a mixture of xgraph and giv.
 
 Here is an example of a gxgraph file:
 
-  $color red
-  0 2 
-  1 0
-  2 2
-  
-  $color green
-  $marks fcircle
-  $noline
-  $mark_size 10
-  0 1
+    $color red
+    0 2 
+    1 0
+    2 2
+    
+    $color green
+    $marks fcircle
+    $noline
+    $mark_size 10
+    0 1
+
+Result:
+![exmaple image](example.png")
+    
   
 # Development
 
