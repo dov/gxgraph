@@ -22,7 +22,7 @@ Here is an example of a gxgraph file:
     0 1
 
 Result:
-![exmaple image](example.png")
+![example image](example.png)
     
   
 # Development
