@@ -8,7 +8,7 @@ This new version (Dec 2012) uses antialiased graphics through cairo.
 
 The syntax of datasets in gxgraph is a mixture of xgraph and giv.
 
-Here is an example of a gxgraph file:
+Here is an example of a gxgraph file gxgraph.gxg:
 
     $color red
     0 2 
@@ -21,7 +21,8 @@ Here is an example of a gxgraph file:
     $mark_size 10
     0 1
 
-Result:
+Resulting output:
+
 ![example image](example.png)
     
   
