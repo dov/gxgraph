@@ -137,7 +137,7 @@ main (int argc, char *argv[])
 	{
 	  if (prm_title_text)
 	    g_free(prm_title_text);
-	  prm_title_text = argv[argp++];
+	  prm_title_text = strdup(argv[argp++]);
 	  continue;
 	}
       CASE ("-xfmt")
